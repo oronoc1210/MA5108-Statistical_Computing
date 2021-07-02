@@ -1,0 +1,443 @@
+---
+title: "MA5108_20230671_1"
+author: "Conor O'Donoghue"
+date: "October 7, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+
+Five replicates for each sample: HER2+ and HER2-
+
+```{r}
+her2_t <- c(456.0, 433.0, 399.0, 478.0, 493.0)
+her2_f <- c(124.0, 133.0, 119.0, 129.0, 101.0)
+```
+
+We need the mean and standard deviation for each set of values.
+
+```{r}
+her2_t_mean <- mean(her2_t)
+her2_t_sd <- sd(her2_t)
+her2_f_mean <- mean(her2_f)
+her2_f_sd <- sd(her2_f)
+```
+
+Next we need a bar plot comparing the means.
+By default the HER2+ mean extends past the end of the yaxis, so I edited the limit of the y axis to go up to 500 instead -- just above the largest HER2+ value. Lastly, I changed the size of the figure so that it would fit on the first page of the PDF file after knitting.
+
+```{r fig.height=4, fig.width=5}
+barplot(c(her2_t_mean, her2_f_mean),
+        names.arg=c("HER2+ mean", "HER2- mean"),
+        col=c("blue", "red"), ylim=c(0,500))
+```
+
+And lastly, a boxplot for each set of values.
+
+```{r}
+boxplot(her2_t, her2_f, names=c("HER2+", "HER2-"))
+```
+
+\newpage
+# Question 2
+
+We measured the abundance of bacterial species in two samples of colon epithelial cells -- one inflamed, the other not inflamed.
+We know the means and standard deviations of each sample, and want to simulate an experiment using that data.
+
+## Question 2 Part 1
+
+We want to simulate 3 experiments using these means/standard deviations, and report the means and standard deviations of these simulated experiments.
+
+For this we should use rnorm(), which creates a vector of random numbers following the normal distribution using a given mean and standard deviation.
+I set a seed, so that every time I run the code when knitting (or if someone tried to replicate my results) the same result comes up every time.
+
+```{r}
+inf_mean <- 340.0
+inf_sd <- 85.0
+non_mean <- 120.0
+non_sd <- 75.0
+
+set.seed(123)
+inf_1 <- rnorm(100, mean=inf_mean, sd=inf_sd)
+inf_2 <- rnorm(100, mean=inf_mean, sd=inf_sd)
+inf_3 <- rnorm(100, mean=inf_mean, sd=inf_sd)
+
+non_1 <- rnorm(100, mean=non_mean, sd=non_sd)
+non_2 <- rnorm(100, mean=non_mean, sd=non_sd)
+non_3 <- rnorm(100, mean=non_mean, sd=non_sd)
+```
+
+### First experiment
+
+```{r}
+inf_1_mean <- mean(inf_1)
+inf_1_sd <- sd(inf_1)
+non_1_mean <- mean(non_1)
+non_1_sd <- sd(non_1)
+```
+
+Inflamed cells
+
+* mean: `r inf_1_mean` 
+* standard deviation: `r inf_1_sd`
+
+Non-inflamed cells
+
+* mean: `r non_1_mean`
+* standard deviation: `r non_1_sd`
+
+### Second experiment
+
+```{r}
+inf_2_mean <- mean(inf_2)
+inf_2_sd <- sd(inf_2)
+non_2_mean <- mean(non_2)
+non_2_sd <- sd(non_2)
+```
+
+Inflamed cells
+
+* mean: `r inf_2_mean` 
+* standard deviation: `r inf_2_sd`
+
+Non-inflamed cells
+
+* mean: `r non_2_mean`
+* standard deviation: `r non_2_sd`
+
+### Third experiment
+
+```{r}
+inf_3_mean <- mean(inf_3)
+inf_3_sd <- sd(inf_3)
+non_3_mean <- mean(non_3)
+non_3_sd <- sd(non_3)
+```
+
+Inflamed cells
+
+* mean: `r inf_3_mean` 
+* standard deviation: `r inf_3_sd`
+
+Non-inflamed cells
+
+* mean: `r non_3_mean`
+* standard deviation: `r non_3_sd`
+
+\newpage
+## Question 2 Part 2
+
+Next, create a plot showing boxplots for each experiment. Have them side-by-side if possible.
+I think they look better if they all have the same yaxis range, so I changed them.
+
+```{r}
+par(mfrow=c(1,3), cex.axis=0.8)
+boxplot(inf_1, non_1, ylim=c(0,600),
+        main="Experiment 1",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf_2, non_2, ylim=c(0,600),
+        main="Experiment 2",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf_3, non_3, ylim=c(0,600),
+        main="Experiment 3",
+        names=c("Inflamed", "Non-Inflamed"))
+```
+
+\newpage
+## Question 2 Part 3
+
+Lastly, perform a t-test to test the null hypothesis that bacterial abundance is not statistically different between the inflamed and non-inflamed conditions.
+
+```{r}
+t.test(inf_1, non_1)
+t.test(inf_2, non_2)
+t.test(inf_3, non_3)
+```
+
+For all three experiments, the p value is much, much less than 0.05. We should definitely reject the null hypothesis, and conclude that the inflamed and non-inflamed cells have statistically different levels of bacterial abundance.
+
+## Question 2 Part 4
+
+Now we need to repeat parts 1-3 using 
+
+1. 5 replicates for each experiment
+2. 20 replicates for each experiment
+
+It wasn't specified how many replicates to use before, so I used 100 because it's **my** simulated experiment and money is no object as far as rnorm() is concerned.
+
+So running these new experiments, the p value from the t-test should be lower for 20 replicates and even lower for 5. I imagine 20 will still be enough to find the experimental conditions statistically different, but we'll have to see for 5.
+
+Since my reasoning was listed in the first round, I'm just going to print the results for these without commenting further.
+
+### Rerun: 5 replicates
+
+```{r}
+inf_mean <- 340.0
+inf_sd <- 85.0
+non_mean <- 120.0
+non_sd <- 75.0
+
+set.seed(234)
+inf5_1 <- rnorm(5, mean=inf_mean, sd=inf_sd)
+inf5_2 <- rnorm(5, mean=inf_mean, sd=inf_sd)
+inf5_3 <- rnorm(5, mean=inf_mean, sd=inf_sd)
+
+non5_1 <- rnorm(5, mean=non_mean, sd=non_sd)
+non5_2 <- rnorm(5, mean=non_mean, sd=non_sd)
+non5_3 <- rnorm(5, mean=non_mean, sd=non_sd)
+```
+
+#### First experiment
+
+```{r}
+inf5_1_mean <- mean(inf5_1)
+inf5_1_sd <- sd(inf5_1)
+non5_1_mean <- mean(non5_1)
+non5_1_sd <- sd(non5_1)
+```
+
+Inflamed cells
+
+* mean: `r inf5_1_mean` 
+* standard deviation: `r inf5_1_sd`
+
+Non-inflamed cells
+
+* mean: `r non5_1_mean`
+* standard deviation: `r non5_1_sd`
+
+\newpage
+#### Second experiment
+
+```{r}
+inf5_2_mean <- mean(inf5_2)
+inf5_2_sd <- sd(inf5_2)
+non5_2_mean <- mean(non5_2)
+non5_2_sd <- sd(non5_2)
+```
+
+Inflamed cells
+
+* mean: `r inf5_2_mean` 
+* standard deviation: `r inf5_2_sd`
+
+Non-inflamed cells
+
+* mean: `r non5_2_mean`
+* standard deviation: `r non5_2_sd`
+
+#### Third experiment
+
+```{r}
+inf5_3_mean <- mean(inf5_3)
+inf5_3_sd <- sd(inf5_3)
+non5_3_mean <- mean(non5_3)
+non5_3_sd <- sd(non5_3)
+```
+
+Inflamed cells
+
+* mean: `r inf5_3_mean` 
+* standard deviation: `r inf5_3_sd`
+
+Non-inflamed cells
+
+* mean: `r non5_3_mean`
+* standard deviation: `r non5_3_sd`
+
+```{r}
+par(mfrow=c(1,3), cex.axis=0.8)
+boxplot(inf5_1, non5_1, ylim=c(0,600),
+        main="Experiment 1",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf5_2, non5_2, ylim=c(0,600),
+        main="Experiment 2",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf5_3, non5_3, ylim=c(0,600),
+        main="Experiment 3",
+        names=c("Inflamed", "Non-Inflamed"))
+```
+
+```{r}
+t.test(inf5_1, non5_1)
+t.test(inf5_2, non5_2)
+t.test(inf5_3, non5_3)
+```
+
+While experiment 1 and 3 have a p value less than 0.05, experiment 2 doesn't! So if we only have 5 replicates, we sometimes reject the null hypothesis and sometimes don't. Seems like more replicates would be a good idea.
+
+\newpage
+### Rerun: 20 replicates
+
+```{r}
+inf_mean <- 340.0
+inf_sd <- 85.0
+non_mean <- 120.0
+non_sd <- 75.0
+
+set.seed(345)
+inf20_1 <- rnorm(20, mean=inf_mean, sd=inf_sd)
+inf20_2 <- rnorm(20, mean=inf_mean, sd=inf_sd)
+inf20_3 <- rnorm(20, mean=inf_mean, sd=inf_sd)
+
+non20_1 <- rnorm(20, mean=non_mean, sd=non_sd)
+non20_2 <- rnorm(20, mean=non_mean, sd=non_sd)
+non20_3 <- rnorm(20, mean=non_mean, sd=non_sd)
+```
+
+#### First experiment
+
+```{r}
+inf20_1_mean <- mean(inf20_1)
+inf20_1_sd <- sd(inf20_1)
+non20_1_mean <- mean(non20_1)
+non20_1_sd <- sd(non20_1)
+```
+
+Inflamed cells
+
+* mean: `r inf20_1_mean` 
+* standard deviation: `r inf20_1_sd`
+
+Non-inflamed cells
+
+* mean: `r non20_1_mean`
+* standard deviation: `r non20_1_sd`
+
+#### Second experiment
+
+```{r}
+inf20_2_mean <- mean(inf20_2)
+inf20_2_sd <- sd(inf20_2)
+non20_2_mean <- mean(non20_2)
+non20_2_sd <- sd(non20_2)
+```
+
+Inflamed cells
+
+* mean: `r inf20_2_mean` 
+* standard deviation: `r inf20_2_sd`
+
+Non-inflamed cells
+
+* mean: `r non20_2_mean`
+* standard deviation: `r non20_2_sd`
+
+\newpage
+#### Third experiment
+
+```{r}
+inf20_3_mean <- mean(inf20_3)
+inf20_3_sd <- sd(inf20_3)
+non20_3_mean <- mean(non20_3)
+non20_3_sd <- sd(non20_3)
+```
+
+Inflamed cells
+
+* mean: `r inf20_3_mean` 
+* standard deviation: `r inf20_3_sd`
+
+Non-inflamed cells
+
+* mean: `r non20_3_mean`
+* standard deviation: `r non20_3_sd`
+
+```{r}
+par(mfrow=c(1,3), cex.axis=0.8)
+boxplot(inf20_1, non20_1, ylim=c(0,600),
+        main="Experiment 1",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf20_2, non20_2, ylim=c(0,600),
+        main="Experiment 2",
+        names=c("Inflamed", "Non-Inflamed"))
+boxplot(inf20_3, non20_3, ylim=c(0,600),
+        main="Experiment 3",
+        names=c("Inflamed", "Non-Inflamed"))
+```
+
+```{r}
+t.test(inf20_1, non20_1)
+t.test(inf20_2, non20_2)
+t.test(inf20_3, non20_3)
+```
+
+
+Lower p-values than the experiments with 5 replicates, but not nearly as extreme as the experiments with 100 replicates -- about as expected.
+
+Altogether, the p-values from the t-tests look like this:
+
+|                | Experiment 1 | Experiment 2 | Experiment 3 |
+|----------------|--------------|--------------|--------------|
+| 5 replicates   | 0.02293      | 0.06002      | 2.37e-4      |
+| 20 replicates  | 1.662e-11    | 1.113e-8     | 5.543e-10    |
+| 100 replicates | 2.2e-16      | 2.2e-16      | 2.2e-16      |
+
+\newpage
+# Question 3
+
+We've identified an interesting novel marine fungus! The average size of a marine-derived fungal genome is around 20 Mbp. We want to extract nuclear DNA, sequence, and attempt to assemble this genome to (a) identify the fungus and (b) screen its genome for bioactive compounds in silico.
+
+We're using the services of a sequencing lab that use Illumina MiSeq.
+
+We need to estimate the total number of reads necessary to ensure 99.99% coverage of the genome.
+
+To start, we can get a quick estimate using the poisson distribution as in the lecture.
+
+$$P(x) = \frac{\lambda^x*e^{-\lambda}}{x!}$$
+Where $\lambda = \frac{L*N}{G}$, with L=read length, N=total number sequenced, and G=genome length.
+
+As per the lecture, the odds of no coverage given $\lambda$ is equal to $e^{-\lambda}$. So the probability of coverage X given $\lambda$ is $1 - e^{-\lambda}$.
+
+So if we want a coverage of 99.99%, we get:
+$$0.9999 = 1 - e^{-\lambda}$$
+
+solving for lambda:
+$$\lambda = -ln(0.0001)$$
+(r uses base e by default for its log function)
+```{r}
+-log(0.0001)
+```
+
+Subbing into lambda:
+$$\frac{N*L}{G} = 9.21034$$
+$$N = \frac{G*9.21034}{L}$$
+
+Using a genome length of 20 million and read length of 150bp (which seems to be the most common read length for illumina):
+
+```{r}
+((20e6 * 9.21034) / 150) / 1e6
+```
+
+Only ~1.23 million reads should be required for 99.99% coverage of a genome of 20Mb using 150bp reads.
+
+However, there are a few assumptions that ought to be challenged. 
+
+Firstly, we were told that the average marine fungal genome is ~20Mb, but that's just the average. There are decent odds that our fungal genome will be larger than that, and with only the mean we don't know HOW much bigger it could be. If the actual size of the genome is bigger than 20Mb, we won't get 99.99% coverage with 1.23M reads even with this naive calculation.
+
+What I'd try to do is make sure that the amount of reads I sequence would be good enough for a fixed percentage of known marine fungal genomes, like 95%, rather than just the mean fungal genome. Then there's only a 5% chance our number of reads wouldn't be enough for full coverage.
+
+I don't know the standard deviation of marine fungal genomes, and if I know fungi I'm sure there's a HUGE range of values for genome length. But just as an example, let's say that the standard deviation is 5Mb.
+
+Assuming that genome sizes in fungi follows a normal distribution, 95% of all fungi genomes should be within 2 standard deviations of the mean -- so maybe something more like 30M for our N in the poisson equation makes sense.
+
+```{r}
+((30e6 * 9.21034) / 150) / 1e6
+```
+
+So more like 1.84M reads. Maybe round up to 2M?
+
+But that's just the thoughts of a graduate student using an equation with too many assumptions. What do the **experts** think? I don't have time to pour over literature, so a quick google search re:fungal whole genome assembly limited to biostars might start us in a good direction.
+
+https://www.biostars.org/p/126534/
+
+This guy wants to sequence a whole fungal genome of 35Mb. Sounds like what we want!
+But the thread's conversation is about whether MiSeq Nextera kits are good for fungal genome sequencing at all. One user says they got great results with their 12Mb genome, and another says they got bad results with their assembly of a 30Mb genome using Nextera MiSeq, and then provides no alternative.
+
+Bit of a dead end there, but talking with other scientists who have done similar projects would be a great place to figure out the most cost-effective way to sequence our genome. 
+
+If I had more time, I'd probably look over Illumina literature, I'm sure they have something published to help people find a good total number of reads for whole genome sequencing / assembly. I think that these methods of research followed by a proposal citing the literature would be the best approach, since genome coverage is a bit more complicated than just a simple poisson distribution, and sequencing is too costly to hope that the answer from our equation is good enough.

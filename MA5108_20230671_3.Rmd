@@ -1,0 +1,225 @@
+---
+title: "MA5108_20230671_3.Rmd"
+author: "Conor"
+date: "1/18/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. RNAseq Analysis
+The RNAseq analysis is comparing control and NRDE2-depleted breast cancer cells.
+
+I downloaded the gene_counts .csv file and the Series Matrix .txt file containing the experimental metadata, so now we can load the former into a dataframe.
+
+```{r}
+df <- read.csv("GSE119827_Cuff_Gene_Counts.csv")
+head(df)
+```
+Columns AJ1 through AJ6 are the samples (with the first three being the three control replicates, and the last three being the three NRDE2-depleted replicates), but we need to convert the dataframe into a smaller matrix that just contains the expression data.
+
+```{r}
+df_exp <- df[c('AJ1', 'AJ2', 'AJ3', 'AJ4', 'AJ5', 'AJ6')]
+rownames(df_exp) <- make.names(df$Gene_ID, unique=TRUE)
+head(df_exp, 10)
+dim(df_exp)
+```
+Now we have a dataframe only containing the gene counts for the six samples, where each row is a unique gene.
+Next we need to find out how many (and which) genes are significantly dysregulated between the conditions, once with and once without a multiple testing correction.
+
+## No multiple testing correction
+```{r}
+treatment <- c(rep(1, 3), rep(2, 3))
+sig_genes = c()
+for (i in 1:nrow(df_exp)){
+  row <- df_exp[i,]
+  values <- as.numeric(row)
+  lmobj <- lm(values ~ treatment)
+  pval <- summary(lmobj)$coefficients[,4][2]
+  if (is.nan(pval)){next}
+  if (pval <= 0.05){
+    sig_genes <- c(sig_genes, i)
+  }
+}
+```
+## Using Panther Database
+```{r}
+sig_gene_names <- rownames(df_exp)[sig_genes]
+write(sig_gene_names, file='sig_genes.txt',
+      sep='\n')
+```
+
+Alright, we've got a list of significant genes in a text file where each line is the name of a significant gene.
+
+I went to Panther and uploaded the list, and obtained a barchart (screenshot of which will be included in submission).
+
+It seems that the majority of significant genes belonged to the 'binding' or 'catalytic activity' biological function gene ontologies.
+
+## 3. Why?
+We're asked to read up on NRDE2, and answer the question as to why the researchers conducted this experiment, and why they used this cell line specifically.
+
+On genecards, NRDE2 (Necessary for RNA Interference, Domain Containing) is a gene involved in RNA degradation and export from the nucleus of the cell, so that it can be transported to the exosomes for degradation.
+
+# Question 2
+```{r}
+library(survival)
+df2 <- read.csv('colon_data.csv')
+head(df2)
+dim(df2)
+unique(df2$rx)
+```
+## 1. Performance of therapy against placebo
+```{r}
+sdiff <- survdiff(Surv(df2$time) ~ df2$rx)
+sdiff
+```
+p < 0.05, we can conclude that the three treatments are different.
+
+```{r}
+sfit <- survfit(Surv(df2$time) ~ df2$rx)
+sfit
+plot(sfit, col=c('black', 'blue', 'green'),
+     main="Survival by treatment", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('Obs', 'Lev', 'Lev+5FU'), lty=c(1,1), col=c('black', 'blue', 'green'))
+```
+
+## 2. Effect of gender on survival
+### a) placebo
+```{r}
+df2.obs <- df2[which(df2$rx=="Obs"),]
+head(df2.obs)
+dim(df2.obs)
+```
+
+```{r}
+sdiff <- survdiff(Surv(df2.obs$time) ~ df2.obs$sex)
+sdiff
+```
+With a p value of 0.2, it appears that sex had no impact on survival in the placebo cohort.
+
+```{r}
+sfit <- survfit(Surv(df2.obs$time) ~ df2.obs$sex)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by sex in placebo cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('female', 'male'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+### b) just Levamisole
+```{r}
+df2.lev <- df2[which(df2$rx=="Lev"),]
+head(df2.lev)
+dim(df2.lev)
+sdiff <- survdiff(Surv(df2.lev$time) ~ df2.lev$sex)
+sdiff
+```
+With p=0.3, sex doesn't appear to have an effect on survival in the levamisole-treated cohort either.
+My guess is that it won't matter in the cohort that received both levamisole and the placebo either.
+
+```{r}
+sfit <- survfit(Surv(df2.lev$time) ~ df2.lev$sex)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by sex in Levamisole cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('female', 'male'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+
+### c) both drugs
+```{r}
+df2.lev5fu <- df2[which(df2$rx=="Lev+5FU"),]
+head(df2.lev5fu)
+dim(df2.lev5fu)
+sdiff <- survdiff(Surv(df2.lev5fu$time) ~ df2.lev5fu$sex)
+sdiff
+```
+p=0.2. Again, nowhere near 0.05, so we can't conclude that sex has any effect on survval in the cohort treated with both drugs either.
+
+```{r}
+sfit <- survfit(Surv(df2.lev5fu$time) ~ df2.lev5fu$sex)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by sex in both drugs cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('female', 'male'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+
+## 3. The impact of having more than 4 positive lymph nodes for both treatment regimens
+Essentially will be the same analysis as the previous section, but with the node4 data column as opposed to the sex column.
+
+### a) placebo
+```{r}
+sdiff <- survdiff(Surv(df2.obs$time) ~ df2.obs$node4)
+sdiff
+```
+The p value is extremely significant, indicating that whether there were 4 or more positive lymph nodes has a significant effect on survival.
+
+```{r}
+sfit <- survfit(Surv(df2.obs$time) ~ df2.obs$node4)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by node4 in placebo cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('4 or less', 'more than 4'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+### b) just Levasimole
+
+```{r}
+sdiff <- survdiff(Surv(df2.lev$time) ~ df2.lev$node4)
+sdiff
+```
+
+Again, a very significant p-value indicates that there is a significant impact on survival in having more than 4 positive lymph nodes.
+
+```{r}
+sfit <- survfit(Surv(df2.lev$time) ~ df2.lev$node4)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by node4 in Levamisole cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('4 or less', 'more than 4'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+### c) both drugs
+```{r}
+sdiff <- survdiff(Surv(df2.lev5fu$time) ~ df2.lev5fu$node4)
+sdiff
+```
+While not as strongly significant as the previous p-values, the resulting p-value is still well below 0.05, indicating a strong association between survival and whether or not there are more than 4 positive lymph nodes.
+
+```{r}
+sfit <- survfit(Surv(df2.lev5fu$time) ~ df2.lev5fu$node4)
+sfit
+plot(sfit, col=c('black', 'blue'),
+     main="Survival by node4 in both drugs cohort", 
+     ylab='Proportion of surviving patients',
+     mark.time=c(TRUE, TRUE))
+
+legend('topright', c('less than 4', '4 or more'), lty=c(1,1), col=c('black', 'blue'))
+```
+
+#### Comments on node4 values
+Unlike sex, it appears that whether or not the patient has more than 4 positive sentinel lymph nodes proximal to the resection location for treatment has a significant impact on survival.
+
+As described in the literature presented in the exam, the more positive sentinal lymph nodes, the poorer the prognosis. The number of positive lymph nodes is a measure of the progression of the cancer -- a higher number indicates that the cancer is more metastatic and is in a further stage. When studying the effect on the drugs on survival, it would likely be a good idea to control for the number of positive lymph nodes, as the presence of more or less patients with more than 4 positive lymph nodes in each group may confound the results of the study between drug treatment and survival.
